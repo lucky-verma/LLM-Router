@@ -4,7 +4,6 @@
 
 This project develops a system that uses two specialized LLMs trained on different topics (sleep science and car history) and implements a router to direct queries to the appropriate model based on the input question. The system utilizes FastAPI for the backend, Gradio for the user interface, and implements asynchronous processing for improved performance.
 
-
 ## Folder Structure
 
     multi_model_llm_system/
@@ -33,7 +32,6 @@ This project develops a system that uses two specialized LLMs trained on differe
     ├── README.md
     ├── .env # Add your HF_TOKEN here
 
-
 ## Setup Instructions
 
 1. Clone the repository
@@ -46,6 +44,7 @@ This project develops a system that uses two specialized LLMs trained on differe
 2. Install dependencies
     Make sure you have conda installed
     My CUDA version is 12.2 on Ubuntu 22.04
+
     ```bash
     conda env create -f environment.yml
     conda activate webai
@@ -81,15 +80,19 @@ This project develops a system that uses two specialized LLMs trained on differe
     ```
 
 ## Usage
+
 1. Start the FastAPI backend:
+
    ```bash
    python main.py
    ```
 
 2. Start the Gradio user interface:
+
     ```bash
     python gradio_app.py
     ```
+
     Open the provided URL in your web browser to interact with the chat interface.
 
 ## Design Choices
@@ -97,18 +100,17 @@ This project develops a system that uses two specialized LLMs trained on differe
 * Base Model: We selected the Mistral 7B model, implemented via Unsloth, as our foundation. This choice offers an optimal balance between performance and efficiency, providing robust natural language understanding while maintaining reasonable computational requirements.
 * Query Router: For query classification, we employed a zero-shot classification model (BART-large-mnli). This approach allows for flexible and accurate routing of queries to the appropriate domain-specific model without requiring extensive labeled training data for each new domain.
 * Domain Specialization: We fine-tuned separate models on domain-specific datasets:
-    * Sleep Science Model: Trained on a comprehensive dataset of sleep-related research, studies, and expert knowledge.
-    * Car History Model: Fine-tuned using a rich dataset encompassing automotive history, technological advancements, and industry developments.
+  * Sleep Science Model: Trained on a comprehensive dataset of sleep-related research, studies, and expert knowledge.
+  * Car History Model: Fine-tuned using a rich dataset encompassing automotive history, technological advancements, and industry developments.
 This specialization ensures high-quality, domain-specific responses.
 * Backend Framework: We chose FastAPI for our backend due to its:
-    * Asynchronous request handling capabilities, enabling efficient processing of multiple queries.
-    * Built-in support for API documentation and validation.
-    * Ease of integration with machine learning models and other Python libraries.
+  * Asynchronous request handling capabilities, enabling efficient processing of multiple queries.
+  * Built-in support for API documentation and validation.
+  * Ease of integration with machine learning models and other Python libraries.
 * Frontend Interface: Gradio was selected to create our user interface because it offers:
-    * A simple yet powerful framework for building interactive AI applications.
+  * A simple yet powerful framework for building interactive AI applications.
 * Model Optimization: We utilized quantization techniques to reduce model size and inference time, allowing for more efficient deployment and faster response times.
 * Scalability Considerations: The architecture is designed to easily accommodate additional domain-specific models, allowing for future expansion of the system's knowledge base.
-
 
 ## Implemented Improvements
 
