@@ -37,7 +37,7 @@ This project develops a system that uses two specialized LLMs trained on differe
 1. Clone the repository
 
     ```bash
-    git clone https://github.com/lucky-verma/Multi-Model-LLM-Router.git
+    git clone https://github.com/lucky-verma/LLM-Router.git
     cd Multi-Model-LLM-Router
     ```
 
