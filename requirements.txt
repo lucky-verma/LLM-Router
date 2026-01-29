@@ -1,3 +1,4 @@
+# pip install -r requirements.txt (omit Colab-only / env-specific deps)
 aiohttp==3.9.5
 datasets==2.20.0
 fastapi==0.111.1

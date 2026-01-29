@@ -1,134 +1,130 @@
 # Multi-Model LLM System with Router
 
-## Overview
+**What it is:** A system that routes user questions to one of two specialized LLMs (sleep science or car history). A zero-shot classifier directs each query to the right model; FastAPI serves inference and Gradio provides the chat UI.
 
-This project develops a system that uses two specialized LLMs trained on different topics (sleep science and car history) and implements a router to direct queries to the appropriate model based on the input question. The system utilizes FastAPI for the backend, Gradio for the user interface, and implements asynchronous processing for improved performance.
+---
 
-## Folder Structure
+## Pipeline
 
-    multi_model_llm_system/
-    ├── data/
-    │   ├── raw/
-    │   │   ├── sleep_science_qa.csv
-    │   │   ├── car_history_qa.csv
-    │   ├── processed/
-    │       ├── train_sleep.csv
-    │       ├── train_car.csv
-    │       ├── test_sleep.csv
-    │       ├── test_car.csv
-    ├── scripts/
-    │   ├── data_preparation.py
-    │   ├── fine_tune_model.py
-    │   ├── query_router.py
-    │   ├── inference.py
-    │   ├── evaluate.py
-    ├── notebooks/
-    │   ├── data_exploration.ipynb
-    │   ├── model_training.ipynb
-    │   ├── router_training.ipynb
-    │   ├── inference_tests.ipynb
-    ├── requirements.txt
-    ├── environment.yml
-    ├── README.md
-    ├── .env # Add your HF_TOKEN here
+```mermaid
+flowchart LR
+    A[Raw JSON Q&A] --> B[Data prep]
+    B --> C[Train Sleep model]
+    B --> D[Train Car model]
+    C --> E[Router: BART]
+    D --> E
+    E --> F[FastAPI /query]
+    F --> G[Gradio UI]
+```
 
-## Setup Instructions
+*Flow: Raw data → train two Mistral-7B specialists → BART router classifies query → API + chat UI.*
 
-1. Clone the repository
+---
 
-    ```bash
-    git clone https://github.com/lucky-verma/LLM-Router.git
-    cd LLM-Router
-    ```
+## What the notebooks & code cover
 
-2. Install dependencies
-    Make sure you have conda installed
-    My CUDA version is 12.2 on Ubuntu 22.04
+| Artifact | Description |
+|----------|-------------|
+| `notebooks/data_exploration.ipynb` | Data preprocessing, train/test split, tokenization and EDA (Spacy, CSV export). |
+| `notebooks/model_training.ipynb` | Fine-tuning Sleep and Car models with Unsloth (Mistral 7B, LoRA, 4-bit). |
+| `notebooks/router.ipynb` | Zero-shot classification with BART-large-mnli for routing queries to sleep vs car. |
+| `notebooks/inference_eval.ipynb` | Load fine-tuned models and run inference; ROUGE-style evaluation. |
+| `notebooks/matrix_factorization.ipynb` | SVD-based matrix factorization (reference/experiment). |
+| `scripts/data_preparation.py` | Batch data prep from raw JSON to processed CSVs; optional HF upload. |
+| `scripts/fine_tune_model.py` | Fine-tune Sleep and Car models (Unsloth + TRL). |
+| `scripts/query_router.py` | Standalone router: load BART classifier and classify text. |
+| `scripts/inference.py` | Inference pipeline for the two specialists. |
+| `scripts/evaluate.py` | Evaluation (e.g. ROUGE) for trained models. |
+| `main.py` | FastAPI app: router + lazy-loaded Sleep/Car models, `/query` endpoint. |
+| `gradio_app.py` | Gradio chat UI calling the FastAPI backend. |
 
-    ```bash
-    conda env create -f environment.yml
-    conda activate webai
-    ```
+---
 
-3. Prepare data
-    Place your raw datasets in the data/raw/ directory.
-    Run the data preparation script:
+## Tech stack (what's inside)
 
-    ```bash
-    python -m scripts.data_preparation
-    ```
+| Layer | Tools / libs |
+|-------|----------------|
+| **LLM & training** | Mistral 7B, Unsloth, LoRA / 4-bit (BitsAndBytes), TRL (`SFTTrainer`), Hugging Face `transformers`, `datasets` |
+| **Router** | `facebook/bart-large-mnli` (zero-shot classification via `transformers` pipeline) |
+| **Backend & API** | FastAPI, Uvicorn, Pydantic |
+| **Frontend** | Gradio, aiohttp (async client to API) |
+| **Data & NLP** | Pandas, SpaCy (`en_core_web_sm`), `rouge_score` |
+| **Env & infra** | `python-dotenv`, PyTorch, NumPy, SciPy, Matplotlib, Seaborn |
 
-4. Fine-tune models
-    Run the fine-tuning script:
+---
 
-    ```bash
-    python -m scripts.fine_tune_model
-    ```
+## Dataset / source
 
-5. Run inference
-    Test the inference pipeline:
+- **Raw data:** `data/raw/training_qna_sleep.json`, `data/raw/training_qna_car.json` (Q&A format).
+- **Processed:** `data/processed/train_sleep.csv`, `train_car.csv`, `test_sleep.csv`, `test_car.csv` (from data prep).
+- **Optional (notebooks):** Hugging Face datasets `thinkersloop/sleep-dataset-llm`, `thinkersloop/car-dataset-llm` for training in notebooks.
 
-    ```bash
-    python -m scripts.inference
-    ```
+---
 
-6. Run evaluation
-    Test the evaluation pipeline:
+## How to run
 
-    ```bash
-    python -m scripts.evaluate
-    ```
+**Conda (recommended)**
 
-## Usage
+```bash
+git clone https://github.com/lucky-verma/LLM-Router.git
+cd LLM-Router
+conda env create -f environment.yml
+conda activate webai
+```
 
-1. Start the FastAPI backend:
+**Or pip only**
 
-   ```bash
-   python main.py
-   ```
+```bash
+pip install -r requirements.txt
+# Optional: python -m spacy download en_core_web_sm
+```
 
-2. Start the Gradio user interface:
+**Prepare data**
 
-    ```bash
-    python gradio_app.py
-    ```
+```bash
+python -m scripts.data_preparation
+```
 
-    Open the provided URL in your web browser to interact with the chat interface.
+**Backend (API)**
 
-## Design Choices
+```bash
+# Set HF_TOKEN in .env if you use private/gated models
+python main.py
+```
 
-* Base Model: We selected the Mistral 7B model, implemented via Unsloth, as our foundation. This choice offers an optimal balance between performance and efficiency, providing robust natural language understanding while maintaining reasonable computational requirements.
-* Query Router: For query classification, we employed a zero-shot classification model (BART-large-mnli). This approach allows for flexible and accurate routing of queries to the appropriate domain-specific model without requiring extensive labeled training data for each new domain.
-* Domain Specialization: We fine-tuned separate models on domain-specific datasets:
-  * Sleep Science Model: Trained on a comprehensive dataset of sleep-related research, studies, and expert knowledge.
-  * Car History Model: Fine-tuned using a rich dataset encompassing automotive history, technological advancements, and industry developments.
-This specialization ensures high-quality, domain-specific responses.
-* Backend Framework: We chose FastAPI for our backend due to its:
-  * Asynchronous request handling capabilities, enabling efficient processing of multiple queries.
-  * Built-in support for API documentation and validation.
-  * Ease of integration with machine learning models and other Python libraries.
-* Frontend Interface: Gradio was selected to create our user interface because it offers:
-  * A simple yet powerful framework for building interactive AI applications.
-* Model Optimization: We utilized quantization techniques to reduce model size and inference time, allowing for more efficient deployment and faster response times.
-* Scalability Considerations: The architecture is designed to easily accommodate additional domain-specific models, allowing for future expansion of the system's knowledge base.
+**Chat UI** (in another terminal, after backend is up)
 
-## Implemented Improvements
+```bash
+python gradio_app.py
+```
 
-* synchronous Processing: Implemented async functions in FastAPI to handle concurrent requests more efficiently.
-* Model Caching: Implemented lazy loading and caching of models to reduce startup time and memory usage.
-* Gradio Interface: Created a user-friendly chat interface that displays which model (Sleep or Car) is responding to each query.
+Open the Gradio URL (e.g. http://localhost:7860) and ask sleep or car questions.
 
-## Potential Future Improvements
+**Optional: fine-tune and evaluate**
 
-1. Model Optimization: Further optimize the models using techniques like qLoRA and pruning to reduce inference time.
-2. Distributed Computing: Implement a distributed system to handle model inference across multiple GPUs or machines.
-3. Caching Mechanism: Implement a response cache for frequent queries to reduce unnecessary model inference.
-4. Advanced Router: Develop a more sophisticated routing mechanism that can handle multi-topic queries or ambiguous cases. Train a router on sleep and car datasets or create a Synthetic Dataset to train the router.
-5. Performance Profiling: Use detailed profiling tools to identify and address specific bottlenecks in the system.
-6. Load Balancing: Introduce a load balancer to distribute requests across multiple worker processes or servers.
-7. Streaming Responses: Implement streaming responses to improve perceived responsiveness for users.
-8. Monitoring and Logging: Add comprehensive logging and monitoring to track system performance and identify issues in real-time.
-Known Issues
-9. High latency: The current system has a high average response time(~2000 ms), which needs to be addressed for real-time applications.
-10. Limited scalability: The system doesn't show significant performance improvements with increased concurrency.
-11. Containerization: The system should be containerized to provide scalability and robustness.
+```bash
+python -m scripts.fine_tune_model
+python -m scripts.inference
+python -m scripts.evaluate
+```
+
+---
+
+## Repo structure
+
+| Path | Purpose |
+|------|---------|
+| `data/raw/` | Raw Q&A JSON (sleep, car). |
+| `data/processed/` | Train/test CSVs and any generated artifacts. |
+| `notebooks/` | Data exploration, model training, router, inference eval, matrix factorization. |
+| `scripts/` | Data prep, fine-tuning, router, inference, evaluation. |
+| `main.py` | FastAPI app (router + Sleep/Car models). |
+| `gradio_app.py` | Gradio chat interface. |
+| `requirements.txt` | Pip dependencies. |
+| `environment.yml` | Conda env (includes CUDA stack where used). |
+
+---
+
+## License
+
+[LICENSE](LICENSE)

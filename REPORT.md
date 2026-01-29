@@ -1,5 +1,7 @@
 # Detailed Report: Multi-Model LLM System with Router
 
+*Technical report and performance metrics.*
+
 ## 1. Executive Summary
 
 This report outlines the development of a Multi-Model Large Language Model (LLM) System with a Router, designed to handle queries in two specialized domains: sleep science and car history. The system employs two fine-tuned LLMs and a routing mechanism to direct queries to the appropriate model, ensuring accurate and domain-specific responses.
